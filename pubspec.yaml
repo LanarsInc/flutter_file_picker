@@ -19,7 +19,7 @@ dependencies:
   win32: ^5.9.0
   cross_file:
     git:
-      url: https://github.com/SviatManiuk/flutter-packages.git
+      url: https://github.com/LanarsInc/flutter-packages-main.git
       ref: fix/fix-cross-file-web-openRead-stream
       path: packages/cross_file
   web: ^1.1.0
