@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
+import 'package:file_picker/_internal/platform_file_web.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:path/path.dart' as p;
@@ -92,7 +93,8 @@ class FilePickerWeb extends FilePicker {
       ) {
         String? blobUrl = URL.createObjectURL(file);
         
-        pickedFiles.add(PlatformFile(
+        pickedFiles.add(PlatformFileWeb(
+          file: file,
           name: file.name,
           path: path ?? blobUrl,
           size: bytes != null ? bytes.length : file.size,
