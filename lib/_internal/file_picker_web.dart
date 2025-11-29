@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
-import 'package:file_picker/_internal/platform_file_web.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:path/path.dart' as p;
@@ -91,10 +90,14 @@ class FilePickerWeb extends FilePicker {
         String? path,
         Stream<List<int>>? readStream,
       ) {
-        String? blobUrl = URL.createObjectURL(file);
-        
-        pickedFiles.add(PlatformFileWeb(
-          file: file,
+        String? blobUrl;
+        if (bytes != null && bytes.isNotEmpty) {
+          final blob =
+              Blob([bytes.toJS].toJS, BlobPropertyBag(type: file.type));
+
+          blobUrl = URL.createObjectURL(blob);
+        }
+        pickedFiles.add(PlatformFile(
           name: file.name,
           path: path ?? blobUrl,
           size: bytes != null ? bytes.length : file.size,
@@ -122,34 +125,25 @@ class FilePickerWeb extends FilePicker {
         }
 
         if (!withData) {
-          addPickedFile(file, null, null, null);
+          final FileReader reader = FileReader();
+          reader.onLoadEnd.listen((e) {
+            String? result = (reader.result as JSString?)?.toDart;
+            addPickedFile(file, null, result, null);
+          });
+          reader.readAsDataURL(file);
           continue;
         }
 
         final syncCompleter = Completer<void>();
         final FileReader reader = FileReader();
-        
         reader.onLoadEnd.listen((e) {
           ByteBuffer? byteBuffer = (reader.result as JSArrayBuffer?)?.toDart;
           addPickedFile(file, byteBuffer?.asUint8List(), null, null);
           syncCompleter.complete();
         });
-        
-        reader.addEventListener('error', (Event e) {
-          addPickedFile(file, null, null, null);
-          syncCompleter.complete();
-        }.toJS);
-        
-        try {
-          reader.readAsArrayBuffer(file);
-          if (readSequential) {
-            await syncCompleter.future;
-          }
-        } catch (e) {
-          addPickedFile(file, null, null, null);
-          if (readSequential) {
-            syncCompleter.complete();
-          }
+        reader.readAsArrayBuffer(file);
+        if (readSequential) {
+          await syncCompleter.future;
         }
       }
     }
